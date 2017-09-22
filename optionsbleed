@@ -8,7 +8,6 @@ import argparse
 import urllib3
 import re
 
-
 def test_bleed(url, args):
     r = pool.request('OPTIONS', url)
     try:
@@ -53,6 +52,8 @@ parser.add_argument("-a", "--all", action="store_true",
                     help="show headers from hosts without problems")
 parser.add_argument("-u", "--url", action='store_true',
                     help="pass URL instead of hostname")
+parser.add_argument("-l", "--list", action='store_true',
+                    help="pass file of hostnames")
 args = parser.parse_args()
 howoften = int(args.n[0])
 
@@ -65,13 +66,14 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 pool = urllib3.PoolManager(10, cert_reqs='CERT_NONE')
 
-if args.url:
-    test_bleed(args.hosttocheck, args)
-else:
-    for prefix in ['http://', 'http://www.', 'https://', 'https://www.']:
-        for i in range(howoften):
-            try:
-                if test_bleed(prefix+args.hosttocheck, args) is False:
-                    break
-            except Exception as e:
-                pass
+if args.list:
+    with open(args.hosttocheck, 'r') as f:
+        hostnames_list = f.read().splitlines()
+    for h in hostnames_list:
+        for prefix in ['http://', 'http://www.', 'https://', 'https://www.']:
+            for i in range(howoften):
+                try:
+                    if test_bleed(prefix+args.hosttocheck, args) is False:
+                        break
+                except Exception as e:
+                    pass
